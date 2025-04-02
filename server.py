@@ -56,7 +56,8 @@ def createJWT(username, secret, authz):
 @server.route("/login", methods=["POST"])
 def login():
     """
-        Run Mysql server: brew services start mysql
+    A function that checks the user input such as username and password. Identify if the user is valid.
+    Generate jwt token if valid, reject otherwise.
     """
     auth = request.authorization
     if not auth:
@@ -64,6 +65,7 @@ def login():
 
     # Connect from flask to mysql db
     cursor = mysql.connection.cursor()
+    # Run sql : check db if there any matches with user inputs. is username existing?
     res = cursor.execute(
         "SELECT email, password FROM user WHERE email = %s", (auth.username,)# user uses email as username
     )
