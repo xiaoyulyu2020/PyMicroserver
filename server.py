@@ -1,3 +1,5 @@
+from calendar import different_locale
+
 from flask import Flask, request
 # In order instal flask_mysqldb you need  :brew install mysql pkg-config
 from flask_mysqldb import MySQL
@@ -10,6 +12,11 @@ server = Flask(__name__)
 mysql = MySQL(server)
 
 # Config DB
+"""
+    Advantage setting the environment variables: flexible
+    command line: export MYSQL_HOST=localhost, you can set up the host.
+    ...
+"""
 server.config["MYSQL_HOST"] = os.environ.get("MYSQL_HOST")
 server.config["MYSQL_USER"] = os.environ.get("MYSQL_USER")
 server.config["MYSQL_PASSWORD"] = os.environ.get("MYSQL_PASSWORD")
@@ -23,7 +30,26 @@ Some problems may raise:
         a. SELECT user, host FROM mysql.user WHERE user = 'auth_user';
             if there is auth_user, then drop it
             DROP USER IF EXISTS 'auth_user'@'localhost';
+    3. Check the auth db:
+        USE auth;
+        show tables;
+        describe user;
+        select * from user;
 """
+
+
+def createJWT(username,secret, authz):
+    jwtToken = jwt.encode(
+        {
+            "username": username,
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=24),
+            "iat": datetime.datetime.utcnow(),
+            "admin": authz,
+        },
+        secret,
+        algorithm="HS256",
+    )
+    return jwtToken
 
 @server.route("/login", methods=["POST"])
 def login():
@@ -33,7 +59,19 @@ def login():
     auth = request.authorization
     if not auth:
         return "No authorization", 401
-    cursor = mysql.connection.cursor()
-    cursor.execute(
 
+    # Connect from flask to mysql db
+    cursor = mysql.connection.cursor()
+    res = cursor.execute(
+        "SELECT email, password FROM user WHERE email = %s", (auth.username,)# user uses email as username
     )
+    if res > 0: # at least one line existing
+        user = cursor.fetchone()  # Fetch user details
+        email, password = user
+
+        if auth.username != user[0] and auth.password != user[1]:
+            return "Invalid credentials", 401
+        else:
+            return createJWT(auth.username, os.environ.get("JEW_SECRET"), True)
+    else:
+        return "Invalid credentials", 401
