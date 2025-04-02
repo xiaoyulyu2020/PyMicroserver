@@ -1,7 +1,7 @@
 from calendar import different_locale
 
 from flask import Flask, request
-# In order instal flask_mysqldb you need  :brew install mysql pkg-config
+# In order install flask_mysqldb you need  :brew install mysql pkg-config
 from flask_mysqldb import MySQL
 import jwt, os, datetime
 
@@ -37,8 +37,10 @@ Some problems may raise:
         select * from user;
 """
 
-
-def createJWT(username,secret, authz):
+def createJWT(username, secret, authz):
+    """
+    A function that generates a JWT token.
+    """
     jwtToken = jwt.encode(
         {
             "username": username,
@@ -69,9 +71,12 @@ def login():
         user = cursor.fetchone()  # Fetch user details
         email, password = user
 
-        if auth.username != user[0] and auth.password != user[1]:
+        if auth.username != email and auth.password != password:
             return "Invalid credentials", 401
         else:
             return createJWT(auth.username, os.environ.get("JEW_SECRET"), True)
     else:
         return "Invalid credentials", 401
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=8080, debug=True)
