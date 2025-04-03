@@ -2,11 +2,11 @@ import datetime
 import jwt
 import os
 from flask import Flask, request
-# In order install flask_mysqldb you need  :brew install mysql pkg-config
 from flask_mysqldb import MySQL
 
 
 """
+# In order install flask_mysqldb you need  :brew install mysql pkg-config
 # init server
 # connect server to database
 # work flow: user Login -> create jwt token -> validation
@@ -57,7 +57,7 @@ def create_jwt(username, secret, authz):
     return jwt_token
 
 def decode_jwt(jwt_token, secret):
-    """Verifies and decodes a JWT token."""
+    """Decodes a JWT token."""
     try:
         decoded = jwt.decode(jwt_token, secret, algorithms=["HS256"])
         return decoded
@@ -77,6 +77,9 @@ def login():
     if not auth:
         return "No authorization", 401
 
+    """
+    Check if the user is valid.
+    """
     # Connect from flask to mysql db
     cursor = mysql.connection.cursor()
     # Run sql : check db if there are any matches with user inputs. is username existing?
