@@ -5,9 +5,12 @@ from flask import Flask, request
 # In order install flask_mysqldb you need  :brew install mysql pkg-config
 from flask_mysqldb import MySQL
 
+
+"""
 # init server
 # connect server to database
-
+# work flow: user Login -> create jwt token -> validation
+"""
 server = Flask(__name__)
 mysql = MySQL(server)
 
@@ -37,18 +40,15 @@ Some problems may raise:
         select * from user;
 """
 
-
-# work flow: user Login -> create jwt token -> validation
-
 def create_jwt(username, secret, authz):
     """
-    A function that generates a JWT token.
+    A function that takes user's login info [username/ mail] and generates a JWT token.
     """
     jwt_token = jwt.encode(
         {
             "username": username,
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=24),
-            "iat": datetime.datetime.utcnow(),
+            "exp": datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=24),
+            "iat": datetime.datetime.now(datetime.timezone.utc),
             "admin": authz,
         },
         secret,
@@ -71,6 +71,7 @@ def login():
     """
     A function that checks the user input such as username and password. Identify if the user is valid.
     Generate jwt token if valid, reject otherwise.
+    The jwt token will pass to validation function.
     """
     auth = request.authorization
     if not auth:
@@ -95,6 +96,11 @@ def login():
 
 @server.route("/validate", methods=["POST"])
 def validate():
+    """
+    The function will first check if the JWT is JSON or Authorization header format.
+    Once this done. It will decode the token, the token will contain either rejected or valid information.
+    return: {message, decoded_token}
+    """
     encoded_jwt = None
 
     # Check if JWT is in JSON body
